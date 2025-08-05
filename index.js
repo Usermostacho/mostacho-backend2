@@ -35,20 +35,23 @@ app.post("/", (req, res) => {
   const { codigo, pin } = req.body;
 
   if (pin !== "4209") {
-    return res.status(403).json({ error: "PIN incorrecto" });
+    return res.status(401).json({ error: "PIN incorrecto" });
   }
 
   db.run(
-    `INSERT INTO clientes (codigo, visitas) VALUES (?, 1)
-     ON CONFLICT(codigo) DO UPDATE SET visitas = visitas + 1`,
+    `INSERT INTO clientes (codigo, visitas)
+     VALUES (?, 1)
+     ON CONFLICT(codigo)
+     DO UPDATE SET visitas = visitas + 1`,
     [codigo],
     function (err) {
       if (err) {
         return res.status(500).json({ error: "Error al actualizar visitas" });
       }
+
       // Obtener el nuevo conteo
       db.get(
-        'SELECT visitas FROM clientes WHERE codigo = ?,'
+        SELECT visitas FROM clientes WHERE codigo = ?,
         [codigo],
         (err, row) => {
           if (err) {
@@ -82,5 +85,5 @@ app.get("/visitas", (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log('Servidor Mostacho VIP corriendo en puerto ${PORT})';
+  console.log(Servidor Mostacho VIP corriendo en puerto ${PORT});
 });
