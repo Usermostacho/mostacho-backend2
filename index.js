@@ -20,59 +20,66 @@ const db = new sqlite3.Database(dbPath, (err) => {
     process.exit(1);
   }
   console.log("Base de datos conectada.");
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS clientes (
+      codigo TEXT PRIMARY KEY,
+      visitas INTEGER DEFAULT 0
+    )
+  `);
 });
 
-// Crear tabla si no existe
-db.run(`
-  CREATE TABLE IF NOT EXISTS clientes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    codigo TEXT UNIQUE,
-    visitas INTEGER
-  )
-`);
-
-// Ruta POST para sumar visita
+// Ruta principal (suma visitas)
 app.post("/", (req, res) => {
   const { codigo, pin } = req.body;
 
   if (pin !== "4209") {
-    return res.status(403).json({ error: "PIN incorrecto" });
+    return res.status(401).json({ error: "PIN incorrecto" });
   }
 
   db.run(
-    `INSERT INTO clientes (codigo, visitas) VALUES (?, 1)
-     ON CONFLICT(codigo) DO UPDATE SET visitas = visitas + 1`,
+    `INSERT INTO clientes (codigo, visitas)
+     VALUES (?, 1)
+     ON CONFLICT(codigo)
+     DO UPDATE SET visitas = visitas + 1`,
     [codigo],
     function (err) {
       if (err) {
         return res.status(500).json({ error: "Error al actualizar visitas" });
       }
-      res.json({ mensaje: "Visita sumada con éxito" });
+      db.get(
+        SELECT visitas FROM clientes WHERE codigo = ?,
+        [codigo],
+        (err, row) => {
+          if (err) {
+            return res.status(500).json({ error: "Error al obtener visitas" });
+          }
+          res.json({ visitas: row.visitas });
+        }
+      );
     }
   );
 });
 
-// Ruta GET para consultar visitas por código
+// Ruta para obtener visitas
 app.get("/visitas", (req, res) => {
-  const { codigo } = req.query;
+  const codigo = req.query.codigo;
   if (!codigo) {
-    return res.status(400).json({ error: "Código requerido" });
+    return res.status(400).json({ error: "Falta el código" });
   }
 
-  db.get(
-    SELECT visitas FROM clientes WHERE codigo = ?,
-    [codigo],
-    (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: "Error al consultar visitas" });
-      }
-
-      res.json({ visitas: row?.visitas || 0 });
+  db.get(SELECT visitas FROM clientes WHERE codigo = ?, [codigo], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: "Error al obtener visitas" });
     }
-  );
+    if (!row) {
+      return res.json({ visitas: 0 });
+    }
+    res.json({ visitas: row.visitas });
+  });
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(Servidor Mostacho VIP corriendo en puerto ${PORT});
+  console.log(Servidor Mostacho activo en puerto ${PORT});
 });
