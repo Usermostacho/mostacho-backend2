@@ -51,7 +51,7 @@ app.post("/", (req, res) => {
 
       // Obtener el nuevo conteo
       db.get(
-        SELECT visitas FROM clientes WHERE codigo = ?,
+        'SELECT visitas FROM clientes WHERE codigo = ?,'
         [codigo],
         (err, row) => {
           if (err) {
